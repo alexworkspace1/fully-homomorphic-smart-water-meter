@@ -1,6 +1,30 @@
 # Architecture
 
-This document explains how SmartWaterMeter computes the daily Harmonic Mean / Arithmetic Mean ratio of a region's water consumption without ever decrypting an individual meter's reading.
+This document explains how SmartWaterMeter computes the daily Harmonic Mean / Arithmetic Mean ratio of a region's water consumption without ever decrypting an individual meter's reading. The math behind each step, and the threat model, are in [SYSTEM_MODELS.md](SYSTEM_MODELS.md).
+
+### System context
+
+```mermaid
+flowchart LR
+    subgraph Region["Water region (N = 150 meters)"]
+        M1["Smart meter 1"]
+        M2["Smart meter …"]
+        MN["Smart meter N"]
+    end
+    DC["Data collector"]
+    CS["Computation Server (CS)"]
+    LUT["LUT provider"]
+    TA["Trusted Authority / utility (TA)"]
+
+    M1 & M2 & MN -- "Enc(readings)" --> DC
+    DC -- "Enc(readings)" --> CS
+    LUT -- "encrypted lookup tables" --> CS
+    CS -- "Enc(v − table) differences" --> TA
+    TA -- "Enc(PIR query)" --> CS
+    CS -- "Enc(Q_d)" --> TA
+```
+
+The project report draws the same parties as four boxes (data collection, LUT, computation server, water center). The diagram above adds the exchange between the CS and the TA, which is where every lookup happens.
 
 ### Parties
 
@@ -15,6 +39,21 @@ The simulation models the components described in the project report. Each `Step
 | LUT Provider | `MakeEncTab_*` | Public key | Builds the encrypted lookup tables ahead of time. |
 
 The CS and TA take turns: every CS step produces files that the next TA step reads, and vice versa. In this simulation the parties exchange data through files on disk (see [PROGRAMS.md](PROGRAMS.md)).
+
+### Keys and trust boundaries
+
+`KeyGen` produces four keys. In the intended deployment each party receives only the keys it needs:
+
+| Key | Used for | Given to |
+|---|---|---|
+| Public key | Encryption | Smart meters, LUT provider, TA (to encrypt PIR queries) |
+| Secret key | Decryption | TA only |
+| Relinearization key | Shrinking ciphertexts after a multiplication | CS |
+| Galois keys | Slot rotations (PIR, rotate-and-add sums) | CS |
+
+The secret key is the only trust boundary that matters: whoever holds it can decrypt any ciphertext. The design keeps it away from the CS, so the server that sees every reading can read none of them. The TA holds the key but only ever receives aggregate differences, never a single meter's ciphertext. See the [threat model](SYSTEM_MODELS.md#threat-model) for what each party learns.
+
+In this simulation all parties share one `Key/` folder, so the separation exists only by convention.
 
 ### What is computed
 
@@ -54,6 +93,35 @@ BFV supports only addition, subtraction and multiplication on integers. Division
  Step6_TA3   TA finds the index of the cross term, sends a PIR query
  Step7_CS4   CS retrieves (cross term / 100) and adds the high-order term → Enc(Q_d · scale)
  CheckRes    TA decrypts and rescales → Q_d
+```
+
+The same pipeline as a sequence of messages, for one day:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as Smart meters
+    participant LUT as LUT provider
+    participant CS as Computation Server
+    participant TA as Trusted Authority
+    Note over TA: KeyGen: public, secret,<br/>relinearization, Galois keys
+    LUT->>CS: encrypted AM/HM, SUM_AM, div_HM, inv_100 tables
+    M->>CS: Enc(round(2^5·ln(w+2))), Enc(round(2^10/ln(w+2)))
+    Note over CS: Step 1: sum over meters per hour,<br/>subtract AM_input / HM_input
+    CS->>TA: hourly differences
+    Note over TA: Step 2: find index, build PIR query
+    TA->>CS: Enc(query) for each hour
+    Note over CS: Step 3: retrieve AM_t, HM_t, sum over 24 h,<br/>subtract SUM_AM_input / div_HM_input
+    CS->>TA: daily differences
+    Note over TA: Step 4: find index, build PIR query
+    TA->>CS: Enc(query) for ΣAM and ΣHM
+    Note over CS: Step 5: retrieve A1, A2, H1, H2;<br/>res1 = A1·H1, res2 = A1·H2 + A2·H1;<br/>subtract inv_100_input
+    CS->>TA: res2 differences
+    Note over TA: Step 6: find index, build PIR query
+    TA->>CS: Enc(query) for res2
+    Note over CS: Step 7: retrieve res2/100, add res1
+    CS->>TA: Enc(Q_d · 2^30 / 10^4)
+    Note over TA: CheckRes: decrypt, rescale, compare<br/>with the plaintext Q_d from Step 1
 ```
 
 ### Integer encoding and precision
@@ -101,3 +169,17 @@ Values are packed only into the first batch row (4096 slots). Lookup tables are 
 | Step 3 / Step 5 | single `Step3_CS2`, `Step5_CS3` | split into `_1` (AM) and `_2` (HM) programs, plus `Step5_CS3` for the product |
 | Table generator | `MakeEncTab_1/2/3` | none: copy the `Table/` folder generated in `src/24hour` |
 | Driver script | `script.py` | `run.sh` (KeyGen and Step 1 only) |
+
+### How the simulation is deployed
+
+Every party is simulated on one machine. Each step is a separate executable, and the parties exchange data through serialized SEAL objects in these folders:
+
+| Folder | Written by | Holds |
+|---|---|---|
+| `Key/` | `KeyGen` | Parameters and all four keys |
+| `Table/` | `MakeEncTab_*` | Encrypted input and output tables |
+| `Result/` | Every step | Differences, PIR queries and intermediate ciphertexts, named by step and date |
+| `ptxt_res/` | `Step1_CS1` | Plaintext reference value of `Q_d` |
+| `ctxt_res/` | `CheckRes` | Decrypted result of the encrypted pipeline |
+
+Steps 1–7 use OpenMP to run their loops in parallel (`NF` threads). A real deployment would put each party on its own host, send the ciphertexts over the network instead of through files, and give each party only its own keys.

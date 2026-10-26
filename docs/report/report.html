@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Privacy Preserving Smart Water</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  @page { size: Letter; margin: 0.9in 0.9in 0.85in 0.9in; }
+  :root { --ink:#1b1f24; --muted:#59636e; --rule:#d0d7de; --accent:#1f4e79; --tint:#f3f6f9; }
+  html { font-size: 10.5pt; }
+  body { font-family: "Georgia", "Times New Roman", serif; color: var(--ink); line-height: 1.45; margin: 0; background: #fff; }
+  h1, h2, h3, h4, .title, th, .caption, .meta, .toc { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+  h1 { font-size: 19pt; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 4pt; margin: 0 0 12pt; break-before: page; }
+  h2 { font-size: 13pt; color: var(--accent); margin: 16pt 0 6pt; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 7pt; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th { background: var(--tint); text-align: left; font-weight: 600; font-size: 8.6pt; }
+  th, td { border: 1px solid var(--rule); padding: 3.5pt 5pt; vertical-align: top; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 8.8pt; background: var(--tint); padding: 0 2pt; border-radius: 2pt; }
+  pre { font-family: Consolas, monospace; font-size: 8.4pt; background: var(--tint); padding: 6pt 8pt; border-radius: 3pt; white-space: pre-wrap; break-inside: avoid; }
+  .caption { font-size: 8.6pt; color: var(--muted); text-align: center; margin: 2pt 0 12pt; }
+  figure { margin: 8pt 0; break-inside: avoid; text-align: center; }
+  .mermaid { display: flex; justify-content: center; }
+  .note { border-left: 3px solid var(--accent); background: var(--tint); padding: 5pt 9pt; margin: 6pt 0 10pt; font-size: 9.4pt; }
+  .eq { margin: 6pt 0 8pt; }
+  .cover { height: 9in; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+  .cover .title { font-size: 30pt; color: var(--accent); font-weight: 700; margin-bottom: 6pt; }
+  .cover .sub { font-family: "Segoe UI", Arial, sans-serif; font-size: 13pt; color: var(--muted); margin-bottom: 36pt; }
+  .cover .meta { font-size: 10.5pt; line-height: 1.7; }
+  .cover .meta b { color: var(--ink); }
+  .toc { font-size: 10.5pt; }
+  .toc ol { list-style: none; padding-left: 0; }
+  .toc ol ol { padding-left: 16pt; font-size: 9.6pt; color: var(--muted); }
+  .toc li { margin: 3pt 0; }
+  .toc a { color: inherit; text-decoration: none; }
+  .tag { font-family: "Segoe UI", Arial, sans-serif; font-size: 7.6pt; font-weight: 600; padding: 0 4pt; border-radius: 2pt; white-space: nowrap; }
+  .ok { background: #dafbe1; color: #116329; } .part { background: #fff8c5; color: #7d4e00; } .no { background: #ffebe9; color: #a40e26; }
+  .katex { font-size: 1.05em; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="title">Privacy Preserving Smart Water</div>
+  <div class="sub">Fully Homomorphic Encryption for Smart Water Meter Analytics<br>Senior Design Project Report — Revised Edition</div>
+  <div class="meta">
+    <b>Ben Antonellis · Gabe Smith · Alex Nguyen</b><br><br>
+    Sponsor: Dr. Shameek Bhattacharjee, Western Michigan University<br>
+    Faculty advisors: Halil Dursunoglu, Dr. Wuwei Shen<br><br>
+    Original report: Fall 2024 · Revised: October 2026<br>
+    Code: github.com/alexworkspace1/fully-homomorphic-smart-water-meter<br>
+    (originally github.com/Linnydude3347/SmartWaterMeter)
+  </div>
+</section>
+
+<section class="toc">
+<h1 id="contents">Contents</h1>
+<ol>
+  <li><a href="#preface">Preface</a></li>
+  <li><a href="#intro">1. Introduction</a></li>
+  <li><a href="#glossary">2. Glossary</a></li>
+  <li><a href="#ur">3. User Requirements</a></li>
+  <li><a href="#sr">4. System Requirements</a></li>
+  <li><a href="#arch">5. System Architecture</a>
+    <ol><li>5.1 System context · 5.2 Components · 5.3 Keys and trust boundaries · 5.4 Protocol · 5.5 Lookup tables and PIR · 5.6 Deployment of the simulation</li></ol></li>
+  <li><a href="#models">6. System Models</a>
+    <ol><li>6.1 Notation · 6.2 Statistical model · 6.3 Lookup-table model · 6.4 Polynomial representation · 6.5 Encoding and precision · 6.6 Error budget · 6.7 FHE parameters and noise · 6.8 Threat model</li></ol></li>
+  <li><a href="#evolution">7. System Evolution</a></li>
+  <li><a href="#testing">8. Testing and Validation</a></li>
+  <li><a href="#conclusion">9. Conclusion</a></li>
+  <li><a href="#appendices">Appendices A–E</a></li>
+  <li><a href="#bib">Bibliography</a></li>
+</ol>
+<div class="note"><b>About this edition.</b> This revision keeps the original report's structure and findings. It adds a full system architecture with diagrams, formal system models, the project's evolution and design decisions, a testing chapter and a conclusion with limitations and future work. Where the original report and the code differ, this edition describes the code and notes the difference (Appendix D).</div>
+</section>
+
+<h1 id="preface">Preface</h1>
+<p>The way we monitor and manage vital resources has changed dramatically as cutting-edge technologies have been built into critical infrastructure such as water distribution networks. "Smart water grids", like their smart energy grid counterparts, are a way to make water supply systems more sustainable, dependable and efficient. They use data analytics and Internet of Things (IoT) devices to optimise distribution, find leaks, resist cyber attacks and improve system performance.</p>
+<p>This report examines one technology for such grids: fully homomorphic encryption (FHE). FHE protects the sensitive data that moves through smart water infrastructure while still allowing analytics to run on that data in encrypted form. The introduction describes the project's goals, motivation and contributions.</p>
+
+<h1 id="intro">1. Introduction</h1>
+<p>Communities depend on water delivery systems to supply clean water for drinking, sanitation and industry. As in electrical grids, Advanced Metering Infrastructure (AMI) is essential to monitoring and controlling consumption in modern smart water systems. These grids combine smart meters at each customer's location with communication networks and data management systems.</p>
+<p>Like electrical grids, smart water networks face <b>data integrity threats</b> that undermine the accuracy of usage data:</p>
+<ul>
+  <li><b>Deductive attacks</b> report less consumption than was used, the water-grid form of theft.</li>
+  <li><b>Additive attacks</b> report more consumption than was used, raising customers' bills and misdirecting resources.</li>
+  <li><b>Camouflage attacks</b> combine the two, raising some meters and lowering others so that mean consumption stays the same while individual records change.</li>
+</ul>
+<p>Detecting these attacks requires analytics over many customers' readings. Conventional systems need access to each customer's consumption, which raises privacy concerns, may conflict with privacy law and can damage customer trust. Secure Multiparty Computation and Differential Privacy offer theoretical privacy guarantees but often struggle with scalability or accuracy. Fully Homomorphic Encryption computes directly on encrypted data, preserving both privacy and the exactness of the result.</p>
+<p>This project builds a privacy-preserving analytics system for smart water grids, adapted from earlier work on smart energy grids. It combines the BFV homomorphic encryption scheme with a <b>Look-Up Table (LUT)</b> approach and <b>Private Information Retrieval (PIR)</b> to compute, on encrypted data, the daily ratio of the Harmonic Mean to the Arithmetic Mean of a region's consumption. This ratio is a known indicator of false data injection. The chapters that follow describe the requirements, the architecture, the models behind each computation, how the system evolved, how it was tested, and what it achieved.</p>
+
+<h1 id="glossary">2. Glossary</h1>
+<table>
+<tr><th style="width:27%">Term</th><th>Meaning</th></tr>
+<tr><td>Arithmetic Mean (AM)</td><td>The sum of values divided by their count.</td></tr>
+<tr><td>Advanced Metering Infrastructure (AMI)</td><td>Smart meters, communication networks and data management systems that let a utility monitor and manage consumption remotely.</td></tr>
+<tr><td>Batching / SIMD</td><td>Packing many values into the slots of one ciphertext so that one operation acts on all of them (Single Instruction, Multiple Data).</td></tr>
+<tr><td>Brakerski-Fan-Vercauteren (BFV)</td><td>An FHE scheme for exact addition, subtraction and multiplication of integers modulo a plain modulus.</td></tr>
+<tr><td>Computation Server (CS)</td><td>The party that performs every homomorphic computation. It never holds the secret key.</td></tr>
+<tr><td>Differential Privacy (DP)</td><td>Protecting individuals in a data set by adding calibrated noise to the results of an analysis.</td></tr>
+<tr><td>Fully Homomorphic Encryption (FHE)</td><td>Encryption that allows arbitrary computation on ciphertexts without decrypting them.</td></tr>
+<tr><td>Galois keys</td><td>Evaluation keys that let the CS rotate the slots of a ciphertext.</td></tr>
+<tr><td>Harmonic Mean (HM)</td><td>The count of values divided by the sum of their reciprocals. For positive values, HM ≤ AM.</td></tr>
+<tr><td>Homomorphic Encryption (HE)</td><td>Encryption that supports some algebraic operations on ciphertexts.</td></tr>
+<tr><td>Internet of Things (IoT)</td><td>Networked devices with sensors and software that collect and exchange data.</td></tr>
+<tr><td>Look-Up Table (LUT)</td><td>A pair of encrypted tables, input values and their outputs, used to evaluate a function BFV cannot compute directly.</td></tr>
+<tr><td>Multiplicative depth</td><td>The longest chain of ciphertext multiplications in a computation. It sets the noise budget needed.</td></tr>
+<tr><td>Noise budget</td><td>How much more noise a ciphertext can take before it no longer decrypts correctly.</td></tr>
+<tr><td>Plain modulus</td><td>The modulus of the integers BFV encrypts (786433 here). Every encoded value must stay below it.</td></tr>
+<tr><td>Private Information Retrieval (PIR)</td><td>Retrieving an entry from a database without revealing which entry was retrieved.</td></tr>
+<tr><td>Relinearization keys</td><td>Evaluation keys that shrink a ciphertext back to normal size after a multiplication.</td></tr>
+<tr><td>Trusted Authority (TA)</td><td>The party that holds the secret key, locates table indices and builds PIR queries. The original report calls it the utility provider or water center.</td></tr>
+</table>
+
+<h1 id="ur">3. User Requirements</h1>
+<p>The requirements below are those of the original report. The last column records whether the implementation meets each one, based on a review of the code in October 2026 (Appendix E).</p>
+<table>
+<tr><th style="width:6%">ID</th><th style="width:42%">Requirement</th><th style="width:30%">Met by</th><th>Status</th></tr>
+<tr><td>UR-1</td><td>Encrypt usage data so that algorithms operate directly on ciphertexts and never need to decrypt an individual reading.</td><td>Meters encrypt in Step 1; every CS step works only on ciphertexts.</td><td><span class="tag part">Met in design</span> Some CS programs load the secret key for debugging.</td></tr>
+<tr><td>UR-2</td><td>Encrypt consumption data at the point of collection, and compare the encrypted computation with the original data to measure accuracy.</td><td>Step 1 saves the plaintext ratio; <code>CheckRes</code> saves the decrypted encrypted ratio.</td><td><span class="tag ok">Met</span> The two results are compared by hand.</td></tr>
+<tr><td>UR-3</td><td>Use a homomorphic LUT approach, storing input/output pairs, to compute the AM/HM ratio on encrypted data.</td><td><code>MakeEncTab_*</code> and Steps 1–7.</td><td><span class="tag part">Met</span> Table-size constants do not match the generated tables.</td></tr>
+<tr><td>UR-4</td><td>Compute ratios with LUTs because BFV cannot divide, and simulate the communicating components: smart meters, data collectors, computation servers, LUT provider and utility provider.</td><td>Section 5.2.</td><td><span class="tag ok">Met</span> Meters and the data collector are simulated inside Step 1.</td></tr>
+<tr><td>UR-5</td><td>Demonstrate that encrypted computation preserves accuracy while maintaining privacy.</td><td>Accuracy comparison (Chapter 8).</td><td><span class="tag part">Reported passed</span> A full run of the committed code stops at Step 7.</td></tr>
+</table>
+
+<h1 id="sr">4. System Requirements</h1>
+<table>
+<tr><th style="width:24%">Requirement</th><th style="width:22%">Version</th><th>Purpose and notes</th></tr>
+<tr><td>Microsoft SEAL</td><td>4.1.2 exactly, shared library</td><td>Homomorphic encryption library; provides the BFV scheme.</td></tr>
+<tr><td>CMake</td><td>3.10 or later</td><td>Build configuration.</td></tr>
+<tr><td>OpenMP</td><td>18.1.8 (used in development)</td><td>Shared-memory parallelism across CPU cores.</td></tr>
+<tr><td>C++ compiler</td><td>C++17: GCC 9.3+ or Clang</td><td>Builds every program.</td></tr>
+<tr><td>Memory</td><td>8 GB or more</td><td>Encrypted tables and rotations are memory-intensive.</td></tr>
+<tr><td>Operating system</td><td>macOS or Linux; WSL2 on Windows</td><td>Some files are opened in text mode, which breaks on native Windows.</td></tr>
+<tr><td>Optional</td><td>GoogleTest 1.12.1, GoogleBenchmark 1.7.1</td><td>Testing SEAL itself.</td></tr>
+</table>
+<p>The test plan adds non-functional goals: no plaintext or key leakage in logs or errors, defined performance thresholds, graceful handling of invalid input, and scalability to larger data sets. No numeric targets were set for these. Their status is discussed in Chapter 9.</p>
+
+<h1 id="arch">5. System Architecture</h1>
+<h2>5.1 System context</h2>
+<p>The system has five kinds of party. Smart meters in a region encrypt their readings and send them, through a data collector, to a single Computation Server. The LUT provider supplies encrypted lookup tables ahead of time. The Trusted Authority, the only holder of the secret key, helps the server with each table lookup and decrypts the final result. Every party communicates only with the Computation Server.</p>
+<figure>
+<pre class="mermaid">
+flowchart LR
+    subgraph R["Water region: N = 150 meters"]
+        M1["Smart meter 1"]
+        M2["Smart meter ..."]
+        MN["Smart meter N"]
+    end
+    DC["Data collector"]
+    CS["Computation Server"]
+    LUT["LUT provider"]
+    TA["Trusted Authority / utility"]
+    M1 & M2 & MN -- "Enc(readings)" --> DC
+    DC -- "Enc(readings)" --> CS
+    LUT -- "encrypted tables" --> CS
+    CS -- "Enc(differences)" --> TA
+    TA -- "Enc(PIR query)" --> CS
+    CS -- "Enc(Q_d)" --> TA
+</pre>
+<div class="caption">Figure 1. System context. All data crossing an arrow is encrypted.</div>
+</figure>
+
+<h2>5.2 Components</h2>
+<table>
+<tr><th style="width:18%">Component</th><th style="width:20%">In the code</th><th style="width:17%">Holds</th><th>Responsibilities</th></tr>
+<tr><td>Smart meter</td><td>Simulated in <code>Step1_CS1</code></td><td>Public key</td><td>Collects hourly consumption at the customer's premises and encrypts it before transmission.</td></tr>
+<tr><td>Data collector</td><td>Simulated in <code>Step1_CS1</code></td><td>Nothing secret</td><td>Gathers the ciphertexts from every meter in a region and forwards them to the CS.</td></tr>
+<tr><td>Computation Server</td><td><code>Step*_CS*</code></td><td>Public, relinearization and Galois keys</td><td>Performs every homomorphic computation: sums, table searches, PIR retrievals and the final product.</td></tr>
+<tr><td>LUT provider</td><td><code>MakeEncTab_1/2/3</code></td><td>Public key</td><td>Builds encrypted input and output tables for the operations BFV cannot compute: reciprocal, division and rescaling.</td></tr>
+<tr><td>Trusted Authority / utility</td><td><code>Step*_TA*</code>, <code>CheckRes</code></td><td>Secret key</td><td>Decrypts table-search differences to locate an index, returns an encrypted PIR query, and decrypts and analyses the final ratio.</td></tr>
+</table>
+
+<h2>5.3 Keys and trust boundaries</h2>
+<p><code>KeyGen</code> generates four keys from one set of parameters. Each party receives only the keys it needs:</p>
+<table>
+<tr><th style="width:22%">Key</th><th style="width:38%">Purpose</th><th>Given to</th></tr>
+<tr><td>Public key</td><td>Encryption</td><td>Smart meters, LUT provider, TA (to encrypt PIR queries)</td></tr>
+<tr><td>Secret key</td><td>Decryption</td><td>TA only</td></tr>
+<tr><td>Relinearization key</td><td>Shrinking ciphertexts after multiplication</td><td>CS</td></tr>
+<tr><td>Galois keys</td><td>Rotating ciphertext slots for PIR and summation</td><td>CS</td></tr>
+</table>
+<p>The secret key is the decisive trust boundary: whoever holds it can decrypt any ciphertext. The design keeps it away from the CS, so the server that processes every reading can read none of them. The TA holds the key but only ever receives aggregate differences, never an individual meter's ciphertext.</p>
+
+<h2>5.4 Protocol</h2>
+<p>The CS and TA take turns in seven numbered steps. Each lookup is a round trip: the CS sends encrypted differences, and the TA answers with an encrypted PIR query.</p>
+<figure>
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant M as Smart meters
+    participant L as LUT provider
+    participant C as Computation Server
+    participant T as Trusted Authority
+    L->>C: Encrypted tables (AM, HM, SUM_AM, div_HM, inv_100)
+    M->>C: Enc(2^5 ln(w+2)), Enc(2^10 / ln(w+2))
+    Note over C: Step 1 - sum over meters per hour, subtract input tables
+    C->>T: Hourly differences
+    Note over T: Step 2 - find index, build PIR query
+    T->>C: Enc(query) for each hour
+    Note over C: Step 3 - retrieve AM_t and HM_t, sum over 24 hours, subtract tables
+    C->>T: Daily differences
+    Note over T: Step 4 - find index, build PIR query
+    T->>C: Enc(query) for the two daily sums
+    Note over C: Step 5 - retrieve digits A1, A2, H1, H2, compute res1 and res2
+    C->>T: res2 differences
+    Note over T: Step 6 - find index, build PIR query
+    T->>C: Enc(query) for res2
+    Note over C: Step 7 - retrieve res2/100, add res1
+    C->>T: Enc(scaled Q_d)
+    Note over T: CheckRes - decrypt, rescale, compare with plaintext
+</pre>
+<div class="caption">Figure 2. Message sequence for one day.</div>
+</figure>
+
+<h2>5.5 Lookup tables and Private Information Retrieval</h2>
+<p>BFV supports only addition, subtraction and multiplication, so division, reciprocals and rescaling use the LUT + PIR method:</p>
+<ol>
+  <li><b>Table search.</b> The LUT provider publishes an encrypted input table of every value <span>$x_k$</span> a quantity can take, and an output table of <span>$f(x_k)$</span>. The CS subtracts the input table from the encrypted value <span>$v$</span>, slot by slot.</li>
+  <li><b>Index lookup.</b> The TA decrypts the differences <span>$v - x_k$</span>. The slot that is zero, or where the sign changes, gives the index <span>$k^\ast$</span>.</li>
+  <li><b>PIR query.</b> The TA encrypts a one-hot vector for the column of <span>$k^\ast$</span> and a rotated copy that encodes its row.</li>
+  <li><b>Retrieval.</b> For each table row <span>$j$</span>, the CS rotates the row query by <span>$-j$</span>, multiplies it by the column query (only the matching row survives) and by output row <span>$j$</span>. Summing over rows and a logarithmic rotate-and-add place <span>$\mathrm{Enc}(f(x_{k^\ast}))$</span> in every slot. The CS never learns <span>$k^\ast$</span>.</li>
+</ol>
+<p>Each table holds 4096 values per ciphertext row (the first batch row of a 8192-degree plaintext). Longer tables span several rows, and the last row is padded with a sentinel that never matches.</p>
+
+<h2>5.6 Deployment of the simulation</h2>
+<p>All parties are simulated on one machine. Each step is a separate executable, and the parties exchange serialized SEAL objects through folders: <code>Key/</code> (parameters and keys), <code>Table/</code> (encrypted tables), <code>Result/</code> (differences, queries and intermediate ciphertexts), <code>ptxt_res/</code> (plaintext reference ratio) and <code>ctxt_res/</code> (decrypted encrypted ratio). Steps 1–7 use OpenMP for parallel loops. Two variants exist: <code>src/24hour</code>, the reference pipeline that processes a full day per step, and <code>src/1hour</code>, which processes one hour at a time and is incomplete. A production deployment would place each party on its own host, exchange ciphertexts over the network, and give each party only its own keys.</p>
+
+<h1 id="models">6. System Models</h1>
+<h2>6.1 Notation</h2>
+<table>
+<tr><th style="width:18%">Symbol</th><th style="width:52%">Meaning</th><th>Value in the code</th></tr>
+<tr><td>$N$</td><td>Number of smart meters in the region</td><td>150</td></tr>
+<tr><td>$T$, $t$</td><td>Set of hourly time slots in a day; one slot</td><td>$|T| = 24$</td></tr>
+<tr><td>$d$</td><td>One day</td><td>2014 data set</td></tr>
+<tr><td>$w_i(t)$</td><td>Water consumption reported by meter $i$ in slot $t$</td><td>input file</td></tr>
+<tr><td>$x_i(t)$</td><td>Transformed reading, $\ln(w_i(t) + 2)$</td><td><code>Step1_CS1</code></td></tr>
+<tr><td>$AM_t$, $HM_t$</td><td>Arithmetic and Harmonic Mean of slot $t$</td><td>hourly LUT outputs</td></tr>
+<tr><td>$Q_d$</td><td>HM/AM ratio of day $d$</td><td>final result</td></tr>
+<tr><td>$\Delta$</td><td>Base of the digit split</td><td>100</td></tr>
+<tr><td>$t_p$</td><td>BFV plain modulus</td><td>786433</td></tr>
+</table>
+
+<h2>6.2 Statistical model</h2>
+<p>For each time slot the Arithmetic and Harmonic Means are taken over the $N$ meters:</p>
+<div class="eq">$$AM_t = \frac{1}{N}\sum_{i=1}^{N} x_i(t) \qquad\qquad HM_t = \frac{N}{\sum_{i=1}^{N} \frac{1}{x_i(t)}}$$</div>
+<p>The daily ratio sums the hourly means over the day. Because BFV cannot divide, it is evaluated as a product with a reciprocal obtained from a lookup table:</p>
+<div class="eq">$$Q_d = \frac{\sum_{t=1}^{24} HM_t}{\sum_{t=1}^{24} AM_t} = \sum_{t=1}^{24} HM_t \times \frac{1}{\sum_{t=1}^{24} AM_t}$$</div>
+<p><b>Why the ratio reveals tampering.</b> For positive values $HM_t \le AM_t$, with equality only when every meter reports the same value. Therefore $0 &lt; Q_d \le 1$, and $Q_d$ measures how dispersed the readings are rather than how large. Scaling every averaged value by a common factor leaves $Q_d$ unchanged. Additive and deductive attacks change the dispersion of the affected meters and move the ratio. A camouflage attack can keep $AM_t$ fixed, but $HM_t$ is more sensitive to small values, so the ratio still moves. The transform $x = \ln(w + 2)$ compresses large readings, and the offset of 2 keeps $x &gt; 0$ so that $1/x$ is defined even for a zero reading. The anomaly detector that decides whether a given $Q_d$ is abnormal is outside this project's scope.</p>
+
+<h2>6.3 Lookup-table model</h2>
+<p>Each non-polynomial function is a pair of tables $(T_{in}, T_{out})$. The original report's functions map to the generated tables as follows ($2^9$ is the output scale of the hourly tables):</p>
+<table>
+<tr><th style="width:9%">Function</th><th style="width:16%">Quantity</th><th style="width:22%">Input $x$</th><th style="width:28%">Output $f(x)$</th><th>Tables</th></tr>
+<tr><td>$f_1$</td><td>$HM_t$</td><td>$\sum_i 2^{10}/x_i(t)$</td><td>$2^9 \cdot N / (x/2^{10})$</td><td><code>HM_input/output</code></td></tr>
+<tr><td>$f_2$</td><td>$AM_t$</td><td>$\sum_i 2^{5}\,x_i(t)$</td><td>$2^9 \cdot (x/2^5) / N$</td><td><code>AM_input/output</code></td></tr>
+<tr><td>$f_3, f_4$</td><td>$\mathcal{H}_1, \mathcal{H}_2$</td><td>$\sum_t HM_t$ (scaled)</td><td>$\lfloor x/\Delta \rfloor$, $x \bmod \Delta$</td><td><code>div_HM_*</code></td></tr>
+<tr><td>$f_5, f_6$</td><td>$\mathcal{A}_1, \mathcal{A}_2$</td><td>$\sum_t AM_t$ (scaled)</td><td>$v = 2^{21}/(x/2^9)$; $\lfloor v/\Delta \rfloor$, $v \bmod \Delta$</td><td><code>SUM_AM_input</code>, <code>inv_SUM_AM_*</code></td></tr>
+<tr><td>$f_7$</td><td>$res_2/\Delta$</td><td>$res_2$</td><td>$\mathrm{round}(x/\Delta)$</td><td><code>inv_100_*</code></td></tr>
+</table>
+
+<h2>6.4 Polynomial representation</h2>
+<p>The scaled product $\sum HM_t \times 1/\sum AM_t$ does not fit in the plaintext space, so both factors are written as two base-$\Delta$ digits:</p>
+<div class="eq">$$\sum_{t=1}^{24} HM_t = \mathcal{H}_1 \Delta + \mathcal{H}_2 \qquad\qquad \frac{1}{\sum_{t=1}^{24} AM_t} = \mathcal{A}_1 \Delta + \mathcal{A}_2$$</div>
+<div class="eq">$$(\mathcal{H}_1\Delta + \mathcal{H}_2)(\mathcal{A}_1\Delta + \mathcal{A}_2) = \mathcal{H}_1\mathcal{A}_1\Delta^2 + (\mathcal{H}_1\mathcal{A}_2 + \mathcal{H}_2\mathcal{A}_1)\Delta + \mathcal{H}_2\mathcal{A}_2$$</div>
+<p>Dividing by $\Delta^2 = 10\,000$ and discarding the last, least significant term gives</p>
+<div class="eq">$$res_1 = \mathcal{H}_1\mathcal{A}_1, \qquad res_2 = \mathcal{H}_1\mathcal{A}_2 + \mathcal{H}_2\mathcal{A}_1, \qquad \widetilde{Q}_d = res_1 + \frac{res_2}{\Delta}$$</div>
+<p>Step 5 computes $res_1$ and $res_2$. Steps 6 and 7 evaluate $res_2/\Delta$ with one more lookup and add $res_1$. $\Delta = 100$ is a design choice: a larger plaintext space keeps more digits but costs execution time.</p>
+
+<h2>6.5 Encoding and precision</h2>
+<p>BFV operates on integers modulo $t_p$, so every real quantity is scaled by a power of two and rounded. Integer encoding is used instead of bitwise encoding because it is much faster.</p>
+<table>
+<tr><th style="width:38%">Stage</th><th>Encoded value</th></tr>
+<tr><td>Per-meter AM input</td><td>$\mathrm{round}(2^{5}\,x_i(t))$</td></tr>
+<tr><td>Per-meter HM input</td><td>$\mathrm{round}(2^{10}/x_i(t))$</td></tr>
+<tr><td>Hourly $AM_t$, $HM_t$</td><td>scaled by $2^{9}$</td></tr>
+<tr><td>Reciprocal of the daily AM sum</td><td>$2^{21} / \sum_t AM_t$</td></tr>
+<tr><td>Product</td><td>$2^{9}\sum_t HM_t \cdot 2^{21}/\sum_t AM_t = 2^{30} Q_d$</td></tr>
+<tr><td>Decrypted result</td><td>$\widetilde{Q}_d \approx 2^{30} Q_d / 10^4$, so $Q_d = \widetilde{Q}_d \cdot 10^4 / 2^{30}$</td></tr>
+</table>
+<p>The tables cover readings from about 50 to 6000, so $x \in [\ln 52, \ln 6002] \approx [3.95, 8.70]$. The resulting ranges show why the digit split is necessary and that it suffices:</p>
+<table>
+<tr><th style="width:42%">Quantity</th><th style="width:34%">Approximate range</th><th>Fits in $t_p = 786433$?</th></tr>
+<tr><td>$\sum_t AM_t$ (real value)</td><td>95 – 209</td><td>yes</td></tr>
+<tr><td>$2^{21}/\sum_t AM_t$, giving $\mathcal{A}_1$</td><td>10 000 – 22 000; $\mathcal{A}_1 \approx$ 100 – 220</td><td>yes</td></tr>
+<tr><td>$2^{9}\sum_t HM_t$, giving $\mathcal{H}_1$</td><td>48 600 – 107 000; $\mathcal{H}_1 \approx$ 486 – 1070</td><td>yes</td></tr>
+<tr><td>Undivided product $2^{30} Q_d$</td><td>up to $\approx 1.07 \times 10^{9}$</td><td><b>no</b>, hence the digit split</td></tr>
+<tr><td>$res_1$</td><td>up to $\approx 235\,000$</td><td>yes</td></tr>
+<tr><td>$res_2$</td><td>up to $\approx 128\,000$</td><td>yes</td></tr>
+<tr><td>$\widetilde{Q}_d$</td><td>up to $\approx 107\,000$</td><td>yes</td></tr>
+</table>
+
+<h2>6.6 Error budget</h2>
+<p>The encrypted result differs from the plaintext ratio because of input rounding (to $2^{-5}$ and $2^{-10}$), the integer rounding of each table output, and the digit split, which drops $\mathcal{H}_2\mathcal{A}_2/10^4 &lt; 1$ and rounds $res_2/\Delta$ by at most $0.5$. One unit of $\widetilde{Q}_d$ equals $10^4/2^{30} \approx 9.3 \times 10^{-6}$ in $Q_d$, so the digit split contributes an error of order $10^{-5}$. Input rounding and the hourly output scale dominate the rest. Three precision levels exist (<code>MakeEncTab_1/2/3</code>, with hourly scales $2^9$, $2^7$ and $2^5$): lower precision gives smaller tables and faster runs at the cost of accuracy.</p>
+
+<h2>6.7 FHE parameters and noise</h2>
+<table>
+<tr><th style="width:26%">Parameter</th><th style="width:32%">Value</th><th>Effect</th></tr>
+<tr><td>Scheme</td><td>BFV</td><td>Exact integer arithmetic modulo $t_p$</td></tr>
+<tr><td>Polynomial modulus degree</td><td>8192</td><td>8192 slots in two rows of 4096; 128-bit security</td></tr>
+<tr><td>Coefficient modulus</td><td>BFV default for 8192 (≈ 218 bits)</td><td>Noise budget for multiplications</td></tr>
+<tr><td>Plain modulus</td><td>786433 (prime, ≡ 1 mod 16384)</td><td>Enables batching; bounds every encoded value</td></tr>
+</table>
+<p>Each ciphertext multiplication consumes much of the noise budget. A LUT retrieval multiplies the rotated row query by the column query and by an output-table row. Its result depends only on the fresh query and table ciphertexts, not on the value being looked up. <b>Every lookup therefore resets the multiplicative depth</b>: the noise accumulated in $\mathrm{Enc}(v)$ is used only for the differences the TA decrypts. The deepest chain is two multiplications for a retrieval plus one for $res_1$ and $res_2$, within the default parameters. BFV relinearization keeps ciphertexts small after each multiplication, and Galois keys provide the rotations.</p>
+
+<h2>6.8 Threat model</h2>
+<table>
+<tr><th style="width:20%">Party</th><th style="width:30%">Assumed behaviour</th><th>What it learns</th></tr>
+<tr><td>Smart meter</td><td>Honest; public key only</td><td>Its own readings</td></tr>
+<tr><td>Data collector</td><td>Honest-but-curious</td><td>Ciphertexts only</td></tr>
+<tr><td>Computation Server</td><td>Honest-but-curious; evaluation keys</td><td>Ciphertexts only; PIR hides which table entry was used</td></tr>
+<tr><td>LUT provider</td><td>Honest; public key</td><td>The table ranges it builds</td></tr>
+<tr><td>Trusted Authority</td><td>Honest-but-curious; sole secret-key holder</td><td>The decrypted differences. Because tables are sorted, it learns the <b>aggregate</b> values (hourly sums over $N$ meters, the daily sums, $res_2$ and $Q_d$), but never an individual reading</td></tr>
+</table>
+<p>The system thus protects individual readings from every party, and all values from the Computation Server. It assumes the CS and TA do not collude. Hiding the aggregates from the TA as well would require randomly rotating the tables before each search, a possible extension (Section 9.3).</p>
+
+<h1 id="evolution">7. System Evolution</h1>
+<table>
+<tr><th style="width:20%">When</th><th>Milestone</th></tr>
+<tr><td>Before May 2024</td><td>Concept: privacy-preserving analytics for smart water; FHE chosen at the client's direction</td></tr>
+<tr><td>May 2024</td><td>Repository created from the smart-energy codebase</td></tr>
+<tr><td>July 2024</td><td>Implementation finished: 24-hour and 1-hour pipelines</td></tr>
+<tr><td>August 2024</td><td>Generated keys, tables and binaries removed from version control</td></tr>
+<tr><td>Nov – Dec 2024</td><td>Step 7 and Step 1 fixes; project report, test report and test plan</td></tr>
+<tr><td>July 2025</td><td>Updated report published</td></tr>
+<tr><td>October 2026</td><td>Code review, repository documentation and this revised report</td></tr>
+</table>
+<div class="caption">Table 7.1. Project timeline, from the repository history.</div>
+
+<h2>7.1 Initial concept</h2>
+<p>The project began with the goal of protecting customer water consumption data in a smart water grid while still allowing the utility to analyse it. Several privacy techniques were available. Secure Multiparty Computation requires many rounds of interaction and scales poorly to many meters. Differential Privacy adds noise that degrades the accuracy of the detection ratio. Fully Homomorphic Encryption gives an exact result on encrypted data and was the approach the client requested.</p>
+<h2>7.2 Inheriting the smart-energy implementation</h2>
+<p>The team was given an existing codebase for smart <i>electricity</i> grids that encrypted per-meter usage, computed the HM/AM ratio with LUT + PIR, and decrypted the result. The water system kept its architecture: the CS and TA alternating in numbered steps, BFV in Microsoft SEAL, and lookup tables for division. Traces of this origin remain, such as the header name <code>SGSimulation.hpp</code> ("smart grid simulation").</p>
+<h2>7.3 Dataset shift</h2>
+<p>Moving from energy to water required reading a new data format (one file per day, one row per hour, one column per meter, $N = 150$), regenerating the lookup tables for the range of water readings, and keeping the table-size constants consistent with the new tables. The data set covers 2014 and is not redistributed: the team had permission to use it only for a specific period.</p>
+<h2>7.4 Two pipeline variants</h2>
+<p>The 24-hour variant processes a whole day in each step and is driven by a script that iterates over the year. The 1-hour variant runs the first steps once per hour with a running sum, to model meters that report hourly. It splits Steps 3 and 5 into separate AM and HM programs. The 24-hour variant became the reference; the 1-hour variant was not completed.</p>
+<h2>7.5 Precision experiments</h2>
+<p>Three table generators implement the same tables at three precision levels, to study the trade-off between accuracy and execution time described in Section 6.6.</p>
+<h2>7.6 Testing and validation</h2>
+<p>Accuracy was validated by comparing the decrypted encrypted ratio with the ratio computed on plaintext data, supported by unit and metamorphic tests (Chapter 8).</p>
+<h2>7.7 Design decisions</h2>
+<table>
+<tr><th style="width:22%">Decision</th><th style="width:24%">Alternatives</th><th>Reason</th></tr>
+<tr><td>BFV scheme</td><td>CKKS; bitwise schemes such as TFHE</td><td>Exact integer results with batching. CKKS is approximate; bitwise schemes are far slower.</td></tr>
+<tr><td>Integer encoding with power-of-two scaling</td><td>Bitwise encoding</td><td>Much faster; precision is tuned through the scaling exponents.</td></tr>
+<tr><td>LUT + PIR for division and reciprocal</td><td>Polynomial approximation of $1/x$</td><td>Exact table values, and each lookup resets the multiplicative depth.</td></tr>
+<tr><td>Base-100 digit split</td><td>Larger plain modulus</td><td>The undivided product exceeds $t_p$; a larger modulus costs noise budget and time.</td></tr>
+<tr><td>$\ln(w+2)$ transform</td><td>Raw readings</td><td>Compresses the range of readings, keeping tables small, and avoids division by zero.</td></tr>
+<tr><td>One executable per step, file exchange</td><td>Single program; networked service</td><td>Mirrors the multi-party model; each step can be timed and rerun.</td></tr>
+<tr><td>Polynomial degree 8192</td><td>4096; 16384</td><td>Enough noise budget for three multiplications at 128-bit security, with 4096 slots per table row.</td></tr>
+</table>
+<h2>7.8 Summary of evolution</h2>
+<p>The project moved from a proof of concept, through adoption of the smart-energy implementation, to a water-specific pipeline with its own data handling, tables and validation. Its central technical challenge, computing a ratio under a scheme that cannot divide while staying inside a small plaintext space, was met by combining lookup tables, PIR and the digit-split representation.</p>
+
+<h1 id="testing">8. Testing and Validation</h1>
+<h2>8.1 Accuracy validation</h2>
+<p>Every run produces two values of $Q_d$ for the same day. Step 1 computes a plaintext reference in double precision, and <code>CheckRes</code> decrypts and rescales the result of the encrypted pipeline. Their difference measures the error introduced by encoding and the lookup tables (Section 6.6).</p>
+<h2>8.2 Unit tests</h2>
+<table>
+<tr><th style="width:5%">#</th><th style="width:22%">Under test</th><th>What was verified</th></tr>
+<tr><td>1</td><td><code>OutputPlaintext</code></td><td>Decrypted Step 2 results are written in the expected format.</td></tr>
+<tr><td>2</td><td><code>OutVector</code></td><td>Encoded Step 1 vectors are printed in full; output depends on the configured table sizes.</td></tr>
+<tr><td>3</td><td><code>PrintParameters</code></td><td>Each step's SEAL context carries the expected BFV parameters.</td></tr>
+<tr><td>4</td><td><code>ShiftWork</code> (index form)</td><td>The PIR row query is shifted correctly. The random form was not tested.</td></tr>
+<tr><td>5</td><td><code>LoadKey</code></td><td>Keys load into a context created from the saved parameters.</td></tr>
+<tr><td>6</td><td><code>KeyGen</code></td><td>All four keys are generated, saved and loadable from any context with the same parameters.</td></tr>
+</table>
+<h2>8.3 Metamorphic tests</h2>
+<table>
+<tr><th style="width:24%">Relation</th><th style="width:50%">Expectation</th><th>Result</th></tr>
+<tr><td>Computational accuracy</td><td>AM, HM and $Q_d$ computed on ciphertexts equal the plaintext values.</td><td><span class="tag ok">Passed</span></td></tr>
+<tr><td>Scaling</td><td>Scaling the inputs scales AM and HM alike and leaves $Q_d$ unchanged.</td><td><span class="tag ok">Passed</span></td></tr>
+</table>
+<div class="note">The scaling relation holds exactly for the averaged values $x$. Because the code averages $x = \ln(w + 2)$, scaling the raw readings $w$ shifts $x$ instead and does change $Q_d$. A repeat of this test should scale $x$.</div>
+<h2>8.4 Planned tests</h2>
+<p>The test plan also describes unit tests (encrypt and decrypt 42; add 42 + 58; multiply 6 × 7; reject a corrupted ciphertext), integration tests (one meter over a week, many meters, mixed operations), and performance and regression tests. These were described as scripts under <code>build/tests/</code>, which are not part of the repository; there is no continuous integration.</p>
+<h2>8.5 Recommended additional tests</h2>
+<ul>
+  <li>An automated end-to-end run on one day, comparing plaintext and encrypted $Q_d$ within a tolerance.</li>
+  <li>A build-time check that the table-size constants match the generated tables.</li>
+  <li>Index-search tests where the value is missing, falls in the last slot, or matches twice.</li>
+  <li>Error and run-time measurements for each precision level and several meter counts.</li>
+  <li>Synthetic additive, deductive and camouflage attacks, to show that $Q_d$ moves under attack.</li>
+</ul>
+
+<h1 id="conclusion">9. Conclusion</h1>
+<p>This project demonstrates a privacy-preserving approach to analysing smart water consumption with Fully Homomorphic Encryption. Using the BFV scheme with lookup tables and Private Information Retrieval, it computes the Arithmetic Mean, the Harmonic Mean and their daily ratio directly on encrypted data, so that each customer's readings stay encrypted from the meter to the final result.</p>
+<h2>9.1 Key achievements</h2>
+<ul>
+  <li><b>Privacy preservation.</b> Meters encrypt at the source. The Computation Server never holds the secret key, and the Trusted Authority sees only aggregates, never an individual reading.</li>
+  <li><b>Operations beyond BFV.</b> Division, reciprocals and rescaling are evaluated with encrypted lookup tables, and PIR hides from the server which entry was used.</li>
+  <li><b>Accuracy within a small plaintext space.</b> The digit-split representation keeps every intermediate value below the plain modulus at an error of order $10^{-5}$ in the ratio.</li>
+  <li><b>Bounded noise.</b> Each lookup restarts from fresh ciphertexts, so depth stays at three multiplications and standard 128-bit parameters suffice.</li>
+  <li><b>Built-in validation.</b> Every run yields both plaintext and encrypted results, and the reported tests found them consistent.</li>
+</ul>
+<h2>9.2 Limitations</h2>
+<ul>
+  <li>The Trusted Authority learns aggregate sums, because tables are searched in sorted order.</li>
+  <li>The simulation runs every party on one machine with a shared key folder; party separation is by convention.</li>
+  <li>Correctness issues found in the October 2026 review prevent a complete run of the committed code, and the 1-hour variant is incomplete (Appendix E).</li>
+  <li>The system computes the detection ratio but does not include a detector that classifies it.</li>
+  <li>Tables are built for 150 meters and a fixed reading range, and results come from one data set for one year.</li>
+  <li>Accuracy and run time were not quantified, and tests are not automated.</li>
+</ul>
+<h2>9.3 Future direction</h2>
+<p>The original report identified three directions: scaling the LUT and PIR integration to larger data sets, computing more advanced metrics, and extending the approach to other industries. A practical path towards them:</p>
+<ol>
+  <li>Resolve the known correctness issues and add an automated end-to-end accuracy test.</li>
+  <li>Quantify error and run time across precision levels and meter counts.</li>
+  <li>Separate the parties: their own keys, no secret key on the server, network transport.</li>
+  <li>Randomly rotate tables before each search, so that the TA no longer learns aggregates.</li>
+  <li>Add an anomaly detector on $Q_d$ and evaluate it against synthetic attacks.</li>
+  <li>Consolidate the duplicated 1-hour and 24-hour code.</li>
+  <li>Compare the BFV pipeline with an approximate scheme such as CKKS.</li>
+</ol>
+<p>The project's central idea is sound: lookup tables and PIR give a BFV pipeline the division it lacks while keeping noise bounded. With the steps above, the prototype can become a basis for measuring how far privacy-preserving analytics on smart water grids can scale.</p>
+
+<h1 id="appendices">Appendix A: Key Generation</h1>
+<table>
+<tr><th style="width:18%">Key</th><th style="width:44%">Purpose</th><th>Usage in this project</th></tr>
+<tr><td>Public key</td><td>Encrypts data at the point of collection, so no one can see the unencrypted data.</td><td>Shared with smart meters across the network, the LUT provider and the TA.</td></tr>
+<tr><td>Secret key</td><td>Decrypts data after computations on ciphertexts.</td><td>Retained securely by the authorised decrypting party, the TA / utility provider.</td></tr>
+<tr><td>Relinearization key</td><td>Reduces ciphertext size after multiplication, which otherwise raises the ciphertext's degree.</td><td>Used by the CS after each multiplication.</td></tr>
+<tr><td>Galois keys</td><td>Enable SIMD operations such as slot rotations on encrypted vectors.</td><td>Used by the CS for PIR retrieval and rotate-and-add sums.</td></tr>
+</table>
+<p>The keys are saved in the <code>Key/</code> directory with the encryption parameters and can be loaded from any context that uses the same parameters, so they are not regenerated for every step. Regenerating keys makes every existing encrypted table unusable, so tables must be rebuilt afterwards.</p>
+
+<h1>Appendix B: System Setup</h1>
+<p>Required software is listed in Chapter 4; SEAL 4.1.2 must match exactly. To build the reference pipeline:</p>
+<pre>cd src/24hour
+rm -f CMakeCache.txt Makefile cmake_install.cmake
+cmake . &amp;&amp; make -j
+mkdir -p Key Table Result ptxt_res ctxt_res
+./bin/KeyGen
+./bin/MakeEncTab_1
+# then Steps 1-7 and CheckRes for each day (script.py)</pre>
+<p>If CMake cannot find the installed software, open <code>CMakeLists.txt</code> in the variant folder and, under the comment <code># Import OpenMP</code>, set the install paths, correcting every path. The repository's <code>docs/BUILD.md</code> and <code>docs/USAGE.md</code> give platform-specific instructions and the input data format.</p>
+
+<h1>Appendix C: Technical Implementation</h1>
+<table>
+<tr><th style="width:24%">File</th><th style="width:8%">Party</th><th>Purpose</th></tr>
+<tr><td><code>KeyGen.cpp</code></td><td>TA</td><td>Sets BFV parameters; generates and saves all four keys.</td></tr>
+<tr><td><code>MakeEncTab_1/2/3.cpp</code></td><td>LUT</td><td>Generates the encrypted input and output tables at three precision levels.</td></tr>
+<tr><td><code>Step1_CS1.cpp</code></td><td>CS</td><td>Encodes and encrypts readings (simulating the meters), sums them per hour, subtracts the AM/HM input tables, and saves the plaintext reference ratio.</td></tr>
+<tr><td><code>Step2_TA1.cpp</code></td><td>TA</td><td>Decrypts hourly differences, finds the table indices, encrypts the PIR queries.</td></tr>
+<tr><td><code>Step3_CS2.cpp</code><br>(1-hour: <code>_1</code> AM, <code>_2</code> HM)</td><td>CS</td><td>Retrieves $AM_t$ and $HM_t$ with PIR, sums over the day, subtracts the daily input tables.</td></tr>
+<tr><td><code>Step4_TA2.cpp</code></td><td>TA</td><td>Locates the daily sums in their tables and encrypts the PIR queries.</td></tr>
+<tr><td><code>Step5_CS3.cpp</code><br>(1-hour: <code>_1</code>, <code>_2</code>)</td><td>CS</td><td>Retrieves the digits $\mathcal{A}_1, \mathcal{A}_2, \mathcal{H}_1, \mathcal{H}_2$, computes $res_1$ and $res_2$, subtracts the <code>inv_100</code> input table.</td></tr>
+<tr><td><code>Step6_TA3.cpp</code></td><td>TA</td><td>Locates $res_2$ in its table and encrypts the PIR query.</td></tr>
+<tr><td><code>Step7_CS4.cpp</code></td><td>CS</td><td>Retrieves $res_2/100$, adds $res_1$, saves the encrypted scaled ratio.</td></tr>
+<tr><td><code>CheckRes.cpp</code></td><td>TA</td><td>Decrypts and rescales the final ratio for comparison with the plaintext reference.</td></tr>
+<tr><td><code>SGSimulation.hpp</code>, <code>Utility.hpp</code></td><td>—</td><td>Constants (meter count, table sizes, precision, file paths) and shared helpers (key loading, data reading, PIR shifts).</td></tr>
+</table>
+
+<h1>Appendix D: Original Report and Implementation</h1>
+<table>
+<tr><th style="width:24%">Topic</th><th style="width:36%">Original report</th><th>Implementation (described in this edition)</th></tr>
+<tr><td>Value averaged</td><td>Raw reading $w_i(t)$</td><td>$\ln(w_i(t)+2)$</td></tr>
+<tr><td>Precision parameter</td><td>A single $2^{p}$</td><td>$2^5$ (AM inputs), $2^{10}$ (HM inputs), $2^9$ (hourly outputs), $2^{21}$ (reciprocal)</td></tr>
+<tr><td>$f_5$</td><td>$x/100$</td><td>Reciprocal of the daily AM sum, then split into digits</td></tr>
+<tr><td>Final step</td><td><code>Step7_TA4</code></td><td><code>Step7_CS4</code>, run by the Computation Server</td></tr>
+<tr><td>Decrypting party</td><td>Utility provider / water center</td><td>Trusted Authority (same role)</td></tr>
+<tr><td>Architecture figure</td><td>Four boxes, one-way arrows</td><td>Figure 1 adds the CS–TA lookup exchange</td></tr>
+</table>
+
+<h1>Appendix E: Known Issues (October 2026 Review)</h1>
+<p>A review of the repository found the following, none of which are fixed yet. The full list with file locations is in <code>docs/KNOWN_ISSUES.md</code>.</p>
+<table>
+<tr><th style="width:20%">Area</th><th>Issue</th></tr>
+<tr><td>Table sizes</td><td>The <code>TABLE_SIZE_*</code> constants are smaller than the generated tables, so readers load only the first row of multi-row tables.</td></tr>
+<tr><td>Step 7 (24-hour)</td><td>Reads <code>Fin_AM1HM1</code> without the underscore that Step 5 writes, so the final step cannot find its input.</td></tr>
+<tr><td>Index search</td><td>Only the inner loop is exited on a match, row-end comparisons read the wrong batch row, and an unmatched value still produces a query.</td></tr>
+<tr><td>1-hour pipeline</td><td>Several wrong file names and table names and an uninitialised loop counter; the pipeline does not complete.</td></tr>
+<tr><td>Hour ordering</td><td>Hours are keyed by text, so "10" sorts before "2".</td></tr>
+<tr><td>Driver script</td><td>Leftover <code>exit(0)</code> calls stop the run after the first step of the first day.</td></tr>
+<tr><td>Security</td><td>Some CS programs load the secret key for debugging; all parties share one key folder; old keys exist in the git history.</td></tr>
+<tr><td>Engineering</td><td>Hard-coded paths in CMake, generated files under version control, duplicated code, no automated tests.</td></tr>
+</table>
+
+<h1 id="bib">Bibliography</h1>
+<ol>
+  <li>Smart Grid Detection Simulation.</li>
+  <li>IEEE Privacy Preserving Analytics Publication.</li>
+  <li>S. Bhattacharjee, privacy-preserving analytics paper.</li>
+  <li>S. Bhattacharjee, forensics paper.</li>
+  <li>Detection of False Data Injection in Smart Water Metering Infrastructure.</li>
+  <li>Microsoft SEAL (release 4.1), Microsoft Research.</li>
+  <li>J. Fan and F. Vercauteren, "Somewhat Practical Fully Homomorphic Encryption," IACR Cryptology ePrint Archive, 2012/144.</li>
+</ol>
+<p style="font-size:9pt;color:#59636e">Entries 1–5 are as listed in the original report, which does not give full citations.</p>
+
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: "neutral", flowchart: { htmlLabels: true }, themeVariables: { fontSize: "13px" } });
+  window.__ready = (async () => {
+    renderMathInElement(document.body, { delimiters: [ {left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false} ], throwOnError: false });
+    await mermaid.run({ querySelector: ".mermaid" });
+    document.body.dataset.ready = "1";
+  })();
+</script>
+</body>
+</html>

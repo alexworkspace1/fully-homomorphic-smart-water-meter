@@ -30,14 +30,20 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full protocol, the math
 
 | Document | Contents |
 |---|---|
-| [Architecture](docs/ARCHITECTURE.md) | Parties, protocol, LUT + PIR mechanics, encoding and FHE parameters |
+| [Requirements](docs/REQUIREMENTS.md) | User, system and non-functional requirements, traced to the code and their status |
+| [Architecture](docs/ARCHITECTURE.md) | System context, parties, keys and trust boundaries, protocol sequence, LUT + PIR mechanics, deployment |
+| [System Models](docs/SYSTEM_MODELS.md) | Notation, AM/HM/ratio model, lookup-table functions, digit split, precision and error budget, noise model, threat model |
+| [System Evolution](docs/EVOLUTION.md) | Project timeline, phases from the smart-energy codebase to today, design decisions and their reasons |
+| [Testing](docs/TESTING.md) | How accuracy is validated, tests that were run, tests that were planned, suggested next tests |
+| [Conclusion](docs/CONCLUSION.md) | Achievements, limitations and future work |
+| [Glossary](docs/GLOSSARY.md) | Terms and references |
 | [Building](docs/BUILD.md) | Installing SEAL and OpenMP, configuring CMake on macOS / Linux / WSL2, troubleshooting |
 | [Usage](docs/USAGE.md) | Folder setup, input data format, running the 24-hour and 1-hour pipelines |
 | [Program Reference](docs/PROGRAMS.md) | Arguments, inputs and outputs of every executable |
 | [Lookup Tables](docs/LOOKUP_TABLES.md) | Table format, ranges, precision variants, keeping sizes in sync |
 | [Known Issues](docs/KNOWN_ISSUES.md) | Open bugs and improvement areas from the latest code review |
 
-The project report, test report and test plan are in the repository root as PDFs (`Senior Design Project.pdf`, `Senior Design Test Report.pdf`, `Smart Water Testing Document.pdf`).
+The project report, test report and test plan are in the repository root as PDFs (`Senior Design Project.pdf`, `Senior Design Test Report.pdf`, `Smart Water Testing Document.pdf`). The project report is the revised edition (October 2026). Its source is `docs/report/report.html`; rebuild the PDF with `python docs/report/render_pdf.py docs/report/report.html "Senior Design Project.pdf"` (needs Playwright with Chromium and network access for KaTeX and Mermaid). The original report is in the git history.
 
 ### Repository Layout
 
